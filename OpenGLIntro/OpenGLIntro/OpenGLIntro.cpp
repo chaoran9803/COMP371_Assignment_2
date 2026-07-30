@@ -6,21 +6,35 @@
 
 // vertex shader
 const char* vs = R"glsl(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aColor;
-uniform mat4 transform;
-out vec3 vertexColor;
-void main() { gl_Position = transform * vec4(aPos, 1.0); vertexColor = aColor; }
+	#version 330 core
+	layout (location = 0) in vec3 aPos;
+	layout (location = 1) in vec3 aColor;
+	uniform mat4 transform;
+	out vec3 vertexColor;
+	void main() { gl_Position = transform * vec4(aPos, 1.0); vertexColor = aColor; }
 )glsl";
 
 // fragment shader
 const char* fs = R"glsl(
-#version 330 core
-in vec3 vertexColor;
-out vec4 FragColor;
-void main() { FragColor = vec4(vertexColor, 1.0); }
+	#version 330 core
+	in vec3 vertexColor;
+	out vec4 FragColor;
+	void main() { FragColor = vec4(vertexColor, 1.0); }
 )glsl";
+
+
+
+glm::vec3 translation(0.0f);
+
+//Function to handle keyboard inputs
+void processInput(GLFWwindow* window){
+	if(glfwGetKey(window,GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		translation.y += 0.001f;
+
+}
+
 
 int main() {
     glfwInit();
@@ -69,10 +83,12 @@ int main() {
     glEnableVertexAttribArray(1);
 
     while (!glfwWindowShouldClose(window)) {
+        processInput(window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(prog);
-        glm::mat4 t = glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+        glm::mat4 t = glm::translate(glm::mat4(1.0f), translation);
+        t = glm::rotate(t, glm::radians(30.0f), glm::vec3(1.0f, 1.0f, 0.0f));
         glUniformMatrix4fv(glGetUniformLocation(prog, "transform"), 1, GL_FALSE, glm::value_ptr(t));
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
