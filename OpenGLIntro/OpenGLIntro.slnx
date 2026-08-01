@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="OpenGLIntro/OpenGLIntro.vcxproj" />
+  <Project Path="../../../../../../source/repos/chaoran9803/COMP371_Assignment_2/OpenGLIntro/OpenGLIntro/OpenGLIntro.vcxproj" Id="e445ce7c-14d6-4237-97e0-2696689935d7" />
 </Solution>
