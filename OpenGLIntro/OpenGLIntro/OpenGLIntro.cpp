@@ -4,6 +4,39 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// handle keyboard input to update transformation parameters
+void processInput(GLFWwindow* window, glm::vec3 &translation, float &rotationAngleZ, float &scaleFactor, float deltaTime)
+{
+    // close on ESC
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    // rotate around Z with Q/E
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        rotationAngleZ += 90.0f * deltaTime; // degrees per second
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        rotationAngleZ -= 90.0f * deltaTime;
+
+    // scale with R/F
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        scaleFactor += 1.0f * deltaTime; // scale units per second
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+        scaleFactor -= 1.0f * deltaTime;
+        if (scaleFactor < 0.01f) scaleFactor = 0.01f;
+    }
+
+    // translate with arrow keys (optional)
+    const float moveSpeed = 1.0f; // units per second
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        translation.x -= moveSpeed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        translation.x += moveSpeed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        translation.y += moveSpeed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        translation.y -= moveSpeed * deltaTime;
+}
+
 // vertex shader
 const char* vs = R"glsl(
 	#version 330 core
@@ -24,16 +57,7 @@ const char* fs = R"glsl(
 
 
 
-glm::vec3 translation(0.0f);
-
-//Function to handle keyboard inputs
-void processInput(GLFWwindow* window){
-	if(glfwGetKey(window,GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		translation.y += 0.001f;
-
-}
+// (per-frame transformation state will be declared inside main)
 
 
 int main() {
@@ -82,16 +106,47 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    // number of indices for drawing
+    int indexCount = (int)(sizeof(indices) / sizeof(indices[0]));
+
+    // per-frame transformation state
+    glm::vec3 translation(0.0f, 0.0f, 0.0f);
+    float rotationAngleZ = 0.0f; // degrees
+    float scaleFactor = 1.0f;
+    float lastFrame = 0.0f;
+
+    int transformLoc = glGetUniformLocation(prog, "transform");
+
     while (!glfwWindowShouldClose(window)) {
-        processInput(window);
+        float currentFrame = (float)glfwGetTime();
+        float deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        processInput(window, translation, rotationAngleZ, scaleFactor, deltaTime);
+
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(prog);
-        glm::mat4 t = glm::translate(glm::mat4(1.0f), translation);
-        t = glm::rotate(t, glm::radians(30.0f), glm::vec3(1.0f, 1.0f, 0.0f));
-        glUniformMatrix4fv(glGetUniformLocation(prog, "transform"), 1, GL_FALSE, glm::value_ptr(t));
+
+        // build model, view, projection to visualize the 3D pyramid
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, translation);
+        // tilt the model so the pyramid sides are visible
+        model = glm::rotate(model, glm::radians(-25.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        // interactive rotation around Y (use Q/E to change rotationAngleZ)
+        model = glm::rotate(model, glm::radians(rotationAngleZ), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(scaleFactor));
+
+        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+
+        glm::mat4 t = projection * view * model;
+
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(t));
+        // ensure EBO is bound for this VAO (stored with VAO but be explicit)
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
