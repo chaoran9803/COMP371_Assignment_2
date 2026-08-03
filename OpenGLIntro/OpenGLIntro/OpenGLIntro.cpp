@@ -4,6 +4,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
+
 // handle keyboard input to update transformation parameters
 void processInput(GLFWwindow* window, glm::vec3 &translation, float &rotationAngleZ, float &scaleFactor, float deltaTime)
 {
@@ -22,18 +24,19 @@ void processInput(GLFWwindow* window, glm::vec3 &translation, float &rotationAng
         scaleFactor += 1.0f * deltaTime; // scale units per second
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
         scaleFactor -= 1.0f * deltaTime;
-        if (scaleFactor < 0.01f) scaleFactor = 0.01f;
+        if (scaleFactor < 0.01f)
+		 scaleFactor = 0.01f;
     }
 
     // translate with arrow keys (optional)
     const float moveSpeed = 1.0f; // units per second
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) // Tranlation right
         translation.x -= moveSpeed * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) // Translation left
         translation.x += moveSpeed * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) // Translation down
         translation.y += moveSpeed * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) // Translation up
         translation.y -= moveSpeed * deltaTime;
 }
 
